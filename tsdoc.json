@@ -1,0 +1,37 @@
+{
+	"tags":
+	{
+		"allowUnknownTags" : true
+	},
+	"plugins":[
+		 "plugins/markdown"
+		,"/Users/Alexey/AppData/Roaming/npm/node_modules/tsdoc/template/plugins/TSDoc.js"
+	],
+	"opts":
+	{
+		"template"	:"/Users/Alexey/AppData/Roaming/npm/node_modules/tsdoc/template",
+		"recurse"	:"true"
+	},
+	"templates" : {
+		"cleverLinks"     : false,
+		"monospaceLinks"  : false
+	},
+	"source":
+	{
+		"includePattern": "(\\.d)?\\.ts$"
+	},
+	"markdown"  : {
+		"parser"   : "gfm",
+		"hardwrap" : true
+	},
+	"tsdoc":{
+		"source"		:"/mifort/YayFon-new-sdk/src/",
+		"destination"	:"/mifort/YayFon-new-sdk/docs",
+		"tutorials"		:"",
+		"systemName"	: "YayFon-new-sdk",
+		"footer"		: "",
+		"copyright"		: "YayFon-new-sdk Copyright © 2018 Alexey.",
+		"outputSourceFiles" : true,
+		"commentsOnly": true
+	}
+}
