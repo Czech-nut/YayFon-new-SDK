@@ -1,17 +1,19 @@
-import * as SIP from "sip.js";
-import { ServerConfig } from "./models/ServerConfig";
-import { User } from "./models/user";
 import { StateMachine } from "./stateMachine";
+import { Promise } from "es6-promise";
+import { User } from "./models/User";
+// import * as SIP from "sip.js";
+import { ServerConfig } from "./models/ServerConfig";
 
 // TODO: put the TSDOC documentation
 
-export class YayFonNewSdk {
+class YayFonNewSdk {
   private stateMachine: any; // TODO: add proper type
   private SIP: any; // TODO: add proper type
   private userData: User;
   private serverConfig: ServerConfig = new ServerConfig("wss.yayfon.com", "443");
 
   constructor(clientData: User) {
+    console.log('test');
     this.stateMachine = new StateMachine(); // State machine is used to control the state of the calls at every moment.
     this.userData = clientData;
    /* this.getAuthData(clientData)
@@ -21,6 +23,24 @@ export class YayFonNewSdk {
             this.SIP = new SIP.UA(config);
           });
       });*/
+  }
+
+  public call() {
+    console.log("call");
+  }
+  public start() {
+    console.log("start");
+  }
+  public endCall() {
+    console.log("endCall");
+  }
+  public end() {
+    console.log("end");
+  }
+  public getState() {
+    // TODO: here State Machine comes to play exposing the state to the SDK user.
+    // User can get the state but never change directly.
+    console.log("getState");
   }
 
   public getAuthData(userData: User): Promise<User> {
@@ -129,15 +149,10 @@ export class YayFonNewSdk {
     });
   }
 
-  call() {
-    console.log("call");
-  }
-  start() {}
-  endCall() {}
-  end() {}
-  getState() {} // TODO: here State Machine comes to play exposing the state to the SDK user. User can get the state but never change directly.
-
   // each of the SDK methods should work state via State Machine
-  // think of pros and cons if the SIP methods should be called from the sdk itself(current file) or from the State machine file.
+  // think of pros and cons if the SIP methods should be called from the sdk itself(current file)
+  // or from the State machine file.
 }
 
+module.exports = YayFonNewSdk;
+exports = YayFonNewSdk;
