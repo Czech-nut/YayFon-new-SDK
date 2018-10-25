@@ -57,7 +57,7 @@ export class StateMachine {
       },
     }
   };
-  stateMachine = new StateMachineConstructor(); // TODO: import proper type
+  stateMachine = new StateMachineConstructor(this.stateMachineSettings); // TODO: import proper type
 
   constructor() { }
 

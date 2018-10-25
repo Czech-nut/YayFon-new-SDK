@@ -30,6 +30,7 @@
     "@types/javascript-state-machine": "^2.4.1",
     "@types/node": "^10.12.0",
     "@types/sip.js": "^0.8.1",
+    "es6-promise": "^3.3.0",
     "browserify": "^16.2.3",
     "javascript-state-machine": "^3.1.0",
     "sip.js": "^0.11.5",
