@@ -5,11 +5,20 @@
     <title>Title</title>
 </head>
 <body>
-
+<audio id="remoteAudio"></audio>
 <input id="username" placeholder="Username">
 <input id="password" placeholder="Password">
 <button id="login" onclick="login()">Login</button>
-
+<input id="number" style="display: none" placeholder="Number">
+<button id="call" style="display: none" onclick="call(document.getElementById('number').value)">Call</button>
+<button id="answer" style="display: none" onclick="answer()">Answer</button>
+<button id="decline" style="display: none" onclick="decline()">Decline</button>
+<button id="blindTransfer" style="display: none" onclick="blindTransfer(document.getElementById('number').value)">Blind transfer</button>
+<button id="attendedTransfer" style="display: none" onclick="attendedTransfer(document.getElementById('number').value)">Attended transfer</button>
+<button id="confirmTransfer" style="display: none" onclick="confirmTransfer()">Confirm transfer</button>
+<button id="hold" style="display: none" onclick="hold()">Hold</button>
+<button id="unhold" style="display: none" onclick="unhold()">Unhold</button>
+<button id="logout" style="display: none" onclick="logout()">Logout</button>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"></script>
 <script defer src="bundle.js"></script>
 

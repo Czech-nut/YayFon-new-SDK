@@ -15,11 +15,13 @@ class YayFonNewSdk {
   private agentCallId: string = "";
   private attendedAgentCallId: string = "";
   private calls: any = {};
+  private readonly incomingCall: (call: YayFonCall) => void;
 
-  constructor(clientData: User) {
+  constructor(uaConfig: any) {
     this.stateMachine = new StateMachine(); // State machine is used to control the state of the calls at every moment.
-    this.userData = clientData;
-    this.setUserAgent(clientData);
+    this.userData = uaConfig.userData;
+    this.setUserAgent(uaConfig.userData);
+    this.incomingCall = uaConfig.callback;
   }
 
   public setUserAgent(userData: User): void {
@@ -59,10 +61,10 @@ class YayFonNewSdk {
       }
   }
 
-  public get attendedAgentCall(): YayFonCall {
+  public attendedAgentCall(): YayFonCall {
     return this.calls[this.attendedAgentCallId];
   }
-  public get agentCall(): YayFonCall {
+  public agentCall(): YayFonCall {
     return this.calls[this.agentCallId];
   }
 
@@ -77,7 +79,7 @@ class YayFonNewSdk {
     };
     const session = this.userAgent.invite("sip:" + phoneNumber + "@" + this.serverConfig.serverHost, options);
     const call = new YayFonCall(session, "outgoing");
-    if (!this.agentCall) {
+    if (!this.agentCall()) {
       this.addSessionId(call);
     }
     session.on("failed", () => {
@@ -92,6 +94,7 @@ class YayFonNewSdk {
     session.on("canceled", () => {
       this.callEnd(call);
     });
+    this.incomingCall(call);
   }
 
   public end(): void {
@@ -113,14 +116,39 @@ class YayFonNewSdk {
   }
 
   public endAttendedCall(): void {
-    this.attendedAgentCall.end();
-    this.agentCall.unhold();
+    this.attendedAgentCall().end();
+    this.agentCall().unhold();
   }
   public confirmTransfer(): void {
-    if (this.agentCall) {
-      this.agentCall.unhold();
-      this.agentCall.getSession().refer(this.attendedAgentCall.getSession());
+    if (this.agentCall()) {
+      this.agentCall().unhold();
+      this.agentCall().getSession().refer(this.attendedAgentCall().getSession());
     }
+  }
+
+  public onRegister(callback: any) {
+    this.userAgent.on("registered", () => {
+      callback();
+    });
+  }
+
+  public onRegistrationFailed(callback: any) {
+    this.userAgent.on("registrationFailed", () => {
+      callback();
+    });
+  }
+
+  public onUnregistered(callback: any) {
+    this.userAgent.on("unregistered", () => {
+      callback();
+    });
+  }
+
+  public logout(): void {
+    this.setOfflineStatus()
+      .then(() => {
+        this.userAgent.stop();
+      });
   }
 
   private callEnd(call: YayFonCall) {
@@ -140,7 +168,7 @@ class YayFonNewSdk {
   }
 
   private getToken(userData: User) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForToken = new XMLHttpRequest();
       const json = JSON.stringify({
         password: userData.password,
@@ -160,13 +188,13 @@ class YayFonNewSdk {
   }
 
   private setOnlineStatus(token: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForAuth = new XMLHttpRequest();
       httpForAuth.open("POST", "https://api.yayfon.com/v2.0/console/account/online", true);
       httpForAuth.setRequestHeader("Content-Type", "application/json");
-      httpForAuth.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("yayFonToken"));
+      httpForAuth.setRequestHeader("Authorization", "Bearer " + token);
       httpForAuth.send(JSON.stringify({
-        destination: localStorage.getItem("yayFonToken"),
+        destination: token,
         pushPlatform: "CHROME",
       }));
       httpForAuth.onreadystatechange = () => {
@@ -178,8 +206,27 @@ class YayFonNewSdk {
     });
   }
 
+  private setOfflineStatus() {
+    return new Promise((resolve: any, reject: any) => {
+      const httpForLogout = new XMLHttpRequest();
+      httpForLogout.open("POST", "https://api.yayfon.com/v2.0/console/account/offline", true);
+      httpForLogout.setRequestHeader("Content-Type", "application/json");
+      httpForLogout.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("yayFonToken"));
+      httpForLogout.send(JSON.stringify({
+        destination: localStorage.getItem("yayFonToken"),
+        pushPlatform: "CHROME",
+      }));
+      httpForLogout.onreadystatechange = () => {
+        if (httpForLogout.readyState === XMLHttpRequest.DONE && httpForLogout.status === 200) {
+          localStorage.setItem("yayFonToken", "");
+          resolve();
+        }
+      };
+    });
+  }
+
   private getWidgetInfo(userData: User) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForAuth = new XMLHttpRequest();
       httpForAuth.open("GET", "https://api.yayfon.com/v2.0/widget/caller-settings/" + userData.username, true);
       httpForAuth.send(null);
@@ -254,6 +301,7 @@ class YayFonNewSdk {
         this.agentCallId = call.getSessionId();
         this.calls[this.agentCallId] = call;
       }
+      this.incomingCall(call);
     });
   }
 
