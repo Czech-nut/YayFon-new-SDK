@@ -1,11 +1,19 @@
 import * as SIP from "sip.js";
+import { XMLHttpRequest } from "xmlhttprequest-ts";
 import { Promise } from "../node_modules/es6-promise/dist/es6-promise.js";
 import { ServerConfig } from "./models/ServerConfig";
 import { User } from "./models/User";
 import { StateMachine } from "./stateMachine";
-import {YayFonCall} from "./YayFonCall";
+import { YayFonCall } from "./YayFonCall";
 
 // TODO: put the TSDOC documentation
+// TODO: create the interfaces to get the types
+// TODO: Everywhere when a user interacts with the call a state in statemachine has to be changed.
+// we can start in easy steps:
+// 1) define the states that a user can have (like on call, on hold, no call etc.)
+// 2) create these states in state machine
+// 3) define what is the flow of changing the sates (like no cal can't change to on hold etc.)
+// 4) every SDK method that interacts with the call has to take in consideration the current state and change it if needed
 
 class YayFonNewSdk {
   private stateMachine: any; // TODO: add proper type
@@ -27,7 +35,7 @@ class YayFonNewSdk {
   public setUserAgent(userData: User): void {
       if (userData.token) {
         this.setOnlineStatus(userData.token)
-          .then((response: User) => {
+          .then((response: User) => {// TODO: this callback repeats 3 times, it can go into separate function instead
             this.setOptions(response)
               .then((config: any) => {
                 this.userAgent = new SIP.UA(config);
@@ -35,9 +43,9 @@ class YayFonNewSdk {
                 this.onIncomingCall();
               });
           });
-      } else if (!userData.password) {
+      } else if (!userData.password) {// TODO: usually true statement described first
         this.getWidgetInfo(userData)
-          .then((response: User) => {
+          .then((response: User) => {// TODO: this callback repeats 3 times, it can go into separate function instead
             this.setOptions(response)
               .then((config: any) => {
                 this.userAgent = new SIP.UA(config);
@@ -47,7 +55,7 @@ class YayFonNewSdk {
           });
       } else if (userData.password) {
         this.getToken(userData)
-          .then((token: string) => {
+          .then((token: string) => {// TODO: this callback repeats 3 times, it can go into separate function instead
             this.setOnlineStatus(token.toString())
               .then((response: User) => {
                 this.setOptions(response)
@@ -61,10 +69,14 @@ class YayFonNewSdk {
       }
   }
 
-  public attendedAgentCall(): YayFonCall {
+  // TODO: Herer and in other places: has to be refactored to have a pure functions in all the places where it is possible to have (http://www.nicoespeon.com/en/2015/01/pure-functions-javascript/)
+  // the reason is that impure functions are unpredictable. The function below can return different values for the same call every time because it is dependent on external values.
+  // to refactor that function it should take take caller id as an argument instead of being dependent on it outside it's scope
+  public attendedAgentCall(): YayFonCall { // TODO: here and everywhere else: all the metheods sould be verbs. Here for example it should say getAttendedAgentCall
     return this.calls[this.attendedAgentCallId];
   }
-  public agentCall(): YayFonCall {
+
+  public agentCall(): YayFonCall { // TODO: like here method is not actually calling anyone like user can think. It only gets the call data
     return this.calls[this.agentCallId];
   }
 
@@ -77,7 +89,7 @@ class YayFonNewSdk {
         },
       },
     };
-    const session = this.userAgent.invite("sip:" + phoneNumber + "@" + this.serverConfig.serverHost, options);
+    const session = this.userAgent.invite("sip:" + phoneNumber + "@" + this.serverConfig.serverHost, options); // TODO: please use ES6 brackets `bla ${variable} bla` instead of summing up strings
     const call = new YayFonCall(session, "outgoing");
     if (!this.agentCall()) {
       this.addSessionId(call);
@@ -97,7 +109,7 @@ class YayFonNewSdk {
     this.incomingCall(call);
   }
 
-  public end(): void {
+  public end(): void { // TODO: "endCall" name wiLL give more info about the SDK method that has to be self-explanatory
     for (const sessionId in this.calls) {
       const call = this.calls[sessionId];
       if (call) {
@@ -109,9 +121,9 @@ class YayFonNewSdk {
 
   public attendedTransfer(agent: YayFonCall, phoneNumber: string): void {
     agent.hold();
-    const session = this.call(phoneNumber);
+    const session = this.call(phoneNumber); // TODO: is it a new session or an old session - variable should be named clearly
     const attendedCall = new YayFonCall(session, "outgoing");
-    this.calls[attendedCall.getSessionId()] = attendedCall;
+    this.calls[attendedCall.getSessionId()] = attendedCall; // TODO: BETTER TO PUT attendedCall.getSessionId() in separate variable, same way how it's done 2 lines above
     this.attendedAgentCallId = attendedCall.getSessionId();
   }
 
@@ -119,6 +131,7 @@ class YayFonNewSdk {
     this.attendedAgentCall().end();
     this.agentCall().unhold();
   }
+
   public confirmTransfer(): void {
     if (this.agentCall()) {
       this.agentCall().unhold();
@@ -151,13 +164,13 @@ class YayFonNewSdk {
       });
   }
 
-  private callEnd(call: YayFonCall) {
+  private callEnd(call: YayFonCall) { // TODO: There is a a small riddle with the naming of functions: call, endCall, callEnd. But no callStart or startCall - please change the methods names so it would be clearer
     const sessionId = call.getSessionId();
     this.calls[sessionId] = null;
     if (sessionId === this.agentCallId) {
       this.agentCallId = "";
     }
-    if (sessionId === this.attendedAgentCallId) {
+    if (sessionId === this.attendedAgentCallId) { // TODO: else if instead of if
       this.attendedAgentCallId = "";
     }
   }
@@ -167,14 +180,16 @@ class YayFonNewSdk {
     this.calls[this.agentCallId] = call;
   }
 
+  // TODO: good idea to move all the logic of working with sessions/storages/requests into separate module (getToken, setOnlineStatus, setOfflineStatus, getWidgetInfo, setOptions)
+
   private getToken(userData: User) {
     return new Promise((resolve: any, reject: any) => {
       const httpForToken = new XMLHttpRequest();
-      const json = JSON.stringify({
+      const json = JSON.stringify({ // TODO: variable name should show what is inside of it, instead of what type of data in it
         password: userData.password,
         username: userData.username,
       });
-      httpForToken.open("POST", "https://api.yayfon.com/v2.0/sso/login", true);
+      httpForToken.open("POST", "https://api.yayfon.com/v2.0/sso/login", true); // TODO: here and everywhere: all the urls should come from environment variables instead of hardcoding them in the SDK
       httpForToken.setRequestHeader("Content-type", "application/json; charset=utf-8");
       httpForToken.onreadystatechange = () => {
         if (httpForToken.readyState === XMLHttpRequest.DONE && httpForToken.status === 200) {
@@ -188,7 +203,7 @@ class YayFonNewSdk {
   }
 
   private setOnlineStatus(token: string) {
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve: any, reject: any) => { // TODO: if reject is not needed - remove it from attributes
       const httpForAuth = new XMLHttpRequest();
       httpForAuth.open("POST", "https://api.yayfon.com/v2.0/console/account/online", true);
       httpForAuth.setRequestHeader("Content-Type", "application/json");
@@ -213,7 +228,7 @@ class YayFonNewSdk {
       httpForLogout.setRequestHeader("Content-Type", "application/json");
       httpForLogout.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("yayFonToken"));
       httpForLogout.send(JSON.stringify({
-        destination: localStorage.getItem("yayFonToken"),
+        destination: this.localStorage.getItem("yayFonToken"),
         pushPlatform: "CHROME",
       }));
       httpForLogout.onreadystatechange = () => {
