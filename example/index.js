@@ -63,21 +63,21 @@ window.call = function (number) {
 };
 
 window.decline = function () {
-  connection.agentCall().end();
+  connection.getCallInfo(connection.getAgentCallId()).endCall();
 };
 
 window.answer = function () {
-  connection.agentCall().answer();
+  connection.getCallInfo(connection.getAgentCallId()).answer();
   document.getElementById('hold').style.display = 'inline';
   document.getElementById('answer').style.display = 'none';
 };
 
 window.blindTransfer = function (number) {
-  connection.agentCall().blindTransfer(number);
+  connection.getCallInfo(connection.getAgentCallId()).blindTransfer(number);
 };
 
 window.attendedTransfer = function (number) {
-  connection.attendedTransfer(connection.agentCall(), number);
+  connection.attendedTransfer(connection.getCallInfo(connection.getAgentCallId()), number);
   document.getElementById('confirmTransfer').style.display = 'inline';
 };
 
@@ -86,13 +86,13 @@ window.confirmTransfer = function () {
 };
 
 window.hold = function () {
-  connection.agentCall().hold();
+  connection.getCallInfo(connection.getAgentCallId()).hold();
   document.getElementById('hold').style.display = 'none';
   document.getElementById('unhold').style.display = 'inline';
 };
 
 window.unhold = function () {
-  connection.agentCall().unhold();
+  connection.getCallInfo(connection.getAgentCallId()).unhold();
   document.getElementById('hold').style.display = 'inline';
   document.getElementById('unhold').style.display = 'none';
 };

@@ -12,7 +12,7 @@ export class YayFonCall {
     return this.currentSession.id;
   }
 
-  public end(): void {
+  public endCall(): void {
     if (this.currentSession) {
       if (this.currentSession.connection) {
         this.currentSession.connection.close();
@@ -34,7 +34,7 @@ export class YayFonCall {
   }
 
   public blindTransfer(phoneNumber: string): void {
-    this.currentSession.refer("sip:" + phoneNumber + "@wss.yayfon.com");
+    this.currentSession.refer(`sip:${phoneNumber}@wss.yayfon.com`);
   }
 
   public isIncomingCall(): boolean {
