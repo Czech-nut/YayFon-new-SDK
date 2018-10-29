@@ -1,11 +1,14 @@
 import * as SIP from "sip.js";
-import { Promise } from "../node_modules/es6-promise/dist/es6-promise.js";
-import { ServerConfig } from "./models/ServerConfig";
-import { UrlConstants } from "./models/urlConstants";
-import { User } from "./models/User";
-import { RequestService } from "./requestService";
-import { StateMachine } from "./stateMachine";
-import { YayFonCall } from "./YayFonCall";
+import {Promise} from "../node_modules/es6-promise/dist/es6-promise.js";
+import {ServerConfig} from "./models/ServerConfig";
+import {UrlConstants} from "./models/urlConstants";
+import {User} from "./models/User";
+import {RequestService} from "./requestService";
+import {StateMachine} from "./stateMachine";
+import {Calling} from "./states/calling";
+import {Talking} from "./states/talking";
+import {Waiting} from "./states/waiting";
+import {YayFonCall} from "./YayFonCall";
 
 // TODO: put the TSDOC documentation
 // TODO: create the interfaces to get the types
@@ -37,26 +40,15 @@ class YayFonNewSdk {
     this.incomingCall = uaConfig.callback;
   }
 
-  public setUserAgent(userData: User): void {
-      if (userData.token) {
-        this.requests.setOnlineStatus(userData.token)
-          .then((response: User) => {
-            this.start(response);
-          });
-      } else if (userData.password) {
-        this.requests.getToken(userData)
-          .then((token: string) => {
-            this.requests.setOnlineStatus(token.toString())
-              .then((response: User) => {
-                this.start(response);
-              });
-          });
-      } else if (!userData.password) {
-        this.requests.getWidgetInfo(userData)
-          .then((response: User) => {
-            this.start(response);
-          });
-      }
+  public getCallMethods() {
+    const state: string = this.stateMachine.getState();
+    if (state === "talking" || state === "onHold" || state === "onMute" || state === "attendedCall") {
+      return new Talking(); // TODO param call or calls
+    } else if (state === "waiting") {
+      return new Waiting();
+    } else if (state === "calling") {
+      return new Calling(); // TODO param call or calls
+    }
   }
 
   public getCallInfo(callId: string): YayFonCall {
@@ -156,6 +148,28 @@ class YayFonNewSdk {
       .then(() => {
         this.userAgent.stop();
       });
+  }
+
+  private setUserAgent(userData: User): void {
+    if (userData.token) {
+      this.requests.setOnlineStatus(userData.token)
+        .then((response: User) => {
+          this.start(response);
+        });
+    } else if (userData.password) {
+      this.requests.getToken(userData)
+        .then((token: string) => {
+          this.requests.setOnlineStatus(token.toString())
+            .then((response: User) => {
+              this.start(response);
+            });
+        });
+    } else if (!userData.password) {
+      this.requests.getWidgetInfo(userData)
+        .then((response: User) => {
+          this.start(response);
+        });
+    }
   }
 
   private start(userData: any) {

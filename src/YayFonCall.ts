@@ -33,6 +33,14 @@ export class YayFonCall {
     this.currentSession.unhold();
   }
 
+  public mute(): void {
+    this.currentSession.mute();
+  }
+
+  public unmute(): void {
+    this.currentSession.unmute();
+  }
+
   public blindTransfer(phoneNumber: string): void {
     this.currentSession.refer(`sip:${phoneNumber}@wss.yayfon.com`);
   }
