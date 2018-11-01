@@ -10,7 +10,7 @@ export class StateMachineSettings {
       {name: "onEnd", from: ["talking", "calling"], to: "waiting"},
       {name: "onAccept", from: "calling", to: "talking"},
     ],
-    methods: {
+    methods: { // TODO: use onInvalidTransition state machine method to process invalid transitions and output the error
       onEnd() {
         console.log("its onEnd");
       },

@@ -1,10 +1,9 @@
-// import { StateMachine } from "@taoqf/javascript-state-machine"; TODO: try to import as typescript module
 import {StateMachineSettings} from "./stateMachineSettings";
-
+// TODO: try to import as typescript module from TS version of library
+// import { StateMachine } from "@taoqf/javascript-state-machine";
 const StateMachineConstructor = require("javascript-state-machine");
 
 export class StateMachine {
-
   public stateMachine: any;
   private readonly stateMachineSettings: StateMachineSettings = new StateMachineSettings();
 

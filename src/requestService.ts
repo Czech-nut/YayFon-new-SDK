@@ -13,9 +13,9 @@ export class RequestService {
   constructor(userData: User) {
     this.userData = userData;
   }
-
+// TODO: general question: do we process the backend errors somewhere? SDK should return fail event instead of crushing
   /**
-   * Returns token
+   * Returns token after Promise resolve
    * @param {User} userData
    * @public
    * @returns Promise - resolve when we get token from server
@@ -27,6 +27,7 @@ export class RequestService {
         password: userData.password,
         username: userData.username,
       });
+
       httpForToken.open("POST", this.api.login, true);
       httpForToken.setRequestHeader("Content-type", "application/json; charset=utf-8");
       httpForToken.onreadystatechange = () => {
@@ -36,6 +37,7 @@ export class RequestService {
           resolve(token);
         }
       };
+
       httpForToken.send(convertedUserData);
     });
   }
@@ -49,6 +51,7 @@ export class RequestService {
   public setOnlineStatus(token: string) {
     return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();
+
       httpForAuth.open("POST", this.api.online, true);
       httpForAuth.setRequestHeader("Content-Type", "application/json");
       httpForAuth.setRequestHeader("Authorization", "Bearer " + token);
@@ -68,12 +71,13 @@ export class RequestService {
   /**
    * Sets offline status
    * @public
-   * @returns Promise
+   * @returns Promise - resolve when we get user data from server
    */
   public setOfflineStatus() {
     return new Promise((resolve: any) => {
       const httpForLogout = new XMLHttpRequest();
       const token = localStorage.getItem("yayFonToken");
+
       httpForLogout.open("POST", this.api.offline, true);
       httpForLogout.setRequestHeader("Content-Type", "application/json");
       httpForLogout.setRequestHeader("Authorization", "Bearer " + token);
@@ -99,11 +103,12 @@ export class RequestService {
   public getWidgetInfo(userData: User) {
     return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();
+
       httpForAuth.open("GET", this.api.widgetSettings + userData.username, true);
       httpForAuth.send(null);
       httpForAuth.onreadystatechange = () => {
         if (httpForAuth.readyState === XMLHttpRequest.DONE && httpForAuth.status === 200) {
-          this.userData = {
+          this.userData = { // TODO: looks like it can be created via class (from "models" folder)
             authKey: "",
             connectivityElementSet: JSON.parse(httpForAuth.responseText).connectivityElementSet,
             displayName: "",

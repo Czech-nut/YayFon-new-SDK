@@ -1,7 +1,7 @@
 {
   "name": "@yayfon/yayfon-new-js-sdk",
   "version": "1.0.0",
-  "description": "SIP.js based SDK for YayFon",
+  "description": "SIP.js based SDK for YayFon takes care of WebRTC and SIP signaling",
   "main": "index.js",
   "scripts": {
     "build": "tsc src/index.ts && browserify example/index.js src/index.js > example/bundle.js",
@@ -20,7 +20,7 @@
     "Voice Call",
     "Audio"
   ],
-  "author": "",
+  "author": "YayFon",
   "license": "ISC",
   "devDependencies": {
     "@taoqf/javascript-state-machine": "^3.1.3",

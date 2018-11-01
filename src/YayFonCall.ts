@@ -1,7 +1,6 @@
-import {StateMachine} from "./stateMachine";
+import {StateMachine} from "./stateMachine/stateMachine";
 
 export class YayFonCall {
-
   private readonly currentSession: any;
   private readonly callDirection: string;
   private stateMachine: StateMachine;
@@ -20,12 +19,31 @@ export class YayFonCall {
 
   /**
    *
+   * Returns info about current session
+   * @public
+   * @returns current session
+   */
+  public getSession(): any {
+    return this.currentSession;
+  }
+
+  /**
+   *
    * Returns id of current session
    * @public
    * @returns session id
    */
   public getSessionId(): string {
     return this.currentSession.id;
+  }
+
+  /**
+   * Answer the incoming session. Available only for incoming call
+   * @public
+   */
+  public answer(): void {
+    this.stateMachine.answer();
+    this.currentSession.accept();
   }
 
   /**
@@ -43,13 +61,13 @@ export class YayFonCall {
   }
 
   /**
-   *
-   * Returns info about current session
+   * Transfers the caller to another agent without speaking to the new agent first
+   * @param {string} phoneNumber - destination of the call
    * @public
-   * @returns current session
    */
-  public getSession(): any {
-    return this.currentSession;
+  public blindTransfer(phoneNumber: string): void {
+    this.stateMachine.blindTransfer();
+    this.currentSession.refer(`sip:${phoneNumber}@wss.yayfon.com`); // TODO: put into constants
   }
 
   /**
@@ -86,17 +104,6 @@ export class YayFonCall {
   }
 
   /**
-   * Transfers the caller to another agent without speaking to the new agent first
-   * @param {string} phoneNumber - destination of the call
-   * @public
-   */
-
-  public blindTransfer(phoneNumber: string): void {
-    this.stateMachine.blindTransfer();
-    this.currentSession.refer(`sip:${phoneNumber}@wss.yayfon.com`);
-  }
-
-  /**
    *
    * Determines if the call is incoming
    * @public
@@ -107,25 +114,15 @@ export class YayFonCall {
   }
 
   /**
-   * Answer the incoming session. Available only for incoming call
-   * @public
-   */
-  public answer(): void {
-    this.stateMachine.answer();
-    this.currentSession.accept();
-  }
-
-  /**
-   * Fired when an established call ends
+   * Fired each time a successful final (200-299) response is received
    * @param {(event: object) => void} callback
    * @public
    */
-  public onEnd(callback: (event: object) => void) {
-    this.currentSession.on("terminated", (event: object) => {
-      if (this.stateMachine.getState() !== "waiting") {
-        this.stateMachine.onEnd();
-      }
-      callback(event);
+  public onAccept(callback: (pc: object) => void) {
+    this.currentSession.on("accepted", () => {
+      this.stateMachine.onAccept();
+      const pc = this.currentSession.sessionDescriptionHandler.peerConnection;
+      callback(pc);
     });
   }
 
@@ -141,15 +138,16 @@ export class YayFonCall {
   }
 
   /**
-   * Fired each time a successful final (200-299) response is received
+   * Fired when an established call ends
    * @param {(event: object) => void} callback
    * @public
    */
-  public onAccept(callback: (pc: object) => void) {
-    this.currentSession.on("accepted", () => {
-      this.stateMachine.onAccept();
-      const pc = this.currentSession.sessionDescriptionHandler.peerConnection;
-      callback(pc);
+  public onEnd(callback: (event: object) => void) { // TODO: here and everywhere: can we get the type for the event?
+    this.currentSession.on("terminated", (event: object) => {
+      if (this.stateMachine.getState() !== "waiting") {
+        this.stateMachine.onEnd();
+      }
+      callback(event);
     });
   }
 

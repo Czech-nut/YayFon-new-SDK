@@ -4,28 +4,21 @@ import {ServerConfig} from "./models/ServerConfig";
 import {UrlConstants} from "./models/urlConstants";
 import {User} from "./models/User";
 import {RequestService} from "./requestService";
-import {StateMachine} from "./stateMachine";
+import {StateMachine} from "./stateMachine/stateMachine";
 import {YayFonCall} from "./YayFonCall";
 
-// TODO: put the TSDOC documentation
-// TODO: create the interfaces to get the types
-// TODO: Everywhere when a user interacts with the call a state in statemachine has to be changed.
-// we can start in easy steps:
-// 1) define the states that a user can have (like on call, on hold, no call etc.)
-// 2) create these states in state machine
-// 3) define what is the flow of changing the sates (like no cal can't change to on hold etc.)
-// 4) every SDK method that interacts with the call has to take in consideration the current state
-// and change it if needed
+// TODO: create the interfaces to get the missed and "any" types
+// TODO: all the public methods should go into README.md with descriptions
 
 class YayFonNewSdk {
-  private stateMachine: StateMachine;
+  private readonly stateMachine: StateMachine;
+  private readonly incomingCall: (call: YayFonCall) => void;
   private userAgent: any;
   private userData: User;
   private serverConfig: ServerConfig = new ServerConfig("wss.yayfon.com", "443");
   private agentCallId: string = "";
   private attendedAgentCallId: string = "";
   private calls: any = {};
-  private readonly incomingCall: (call: YayFonCall) => void;
   private api: UrlConstants = new UrlConstants();
   private requests: RequestService;
 
@@ -33,7 +26,6 @@ class YayFonNewSdk {
    *
    * @param uaConfig - object with user data and callback
    */
-
   constructor(uaConfig: any) {
     this.stateMachine = new StateMachine();
     this.userData = uaConfig.userData;
@@ -77,7 +69,8 @@ class YayFonNewSdk {
    */
   public call(phoneNumber: string): void {
     this.stateMachine.call();
-    const options = {
+
+    const options = { // TODO: can be created as class
       sessionDescriptionHandlerOptions: {
         constraints: {
           audio: true,
@@ -87,6 +80,7 @@ class YayFonNewSdk {
     };
     const session = this.userAgent.invite(`sip:${phoneNumber}@${this.serverConfig.serverHost}`, options);
     const call = new YayFonCall(session, "outgoing", this.stateMachine);
+
     if (!this.getCallInfo(this.getAgentCallId())) {
       this.addSessionId(call);
     }
@@ -117,23 +111,23 @@ class YayFonNewSdk {
       for (const sessionId in this.calls) {
         const call = this.calls[sessionId];
         if (call) {
-          call.endCall();
+          call.endCall(); // TODO: should state machine be involved in that case as well?
         }
       }
       this.calls = {};
     }
   }
-
+// TODO: the line below "Transfer where before actually transferring to the destination" doesn't make much sense
   /**
    * Transfer where before actually transferring to the destination,
-   * the call is put on hold and another call is initiated to confirm whether the end destination actually wants to take
-   * the call or not. These two calls can then merged together.
+   * the call is put on hold and another call is initiated to confirm whether the end destination
+   * actually wants to take the call or not. These two calls can be merged together later.
    * @param {YayFonCall} agent - object with info about current call
    * @param {string} phoneNumber - destination of the call
    * @public
    */
   public attendedTransfer(agent: YayFonCall, phoneNumber: string): void {
-    agent.hold();
+    agent.hold(); // TODO: should state machine be involved?
     const attendedSession = this.call(phoneNumber);
     const attendedCall = new YayFonCall(attendedSession, "outgoing", this.stateMachine);
     const attendedSessionId = attendedCall.getSessionId();
@@ -145,16 +139,16 @@ class YayFonNewSdk {
    * Declines only the person to whom the transfer was made
    * @public
    */
-  public endAttendedCall(): void {
+  public endAttendedCall(): void {// TODO: should state machine be involved?
     this.getCallInfo(this.getAttendedAgentCallId()).endCall();
     this.getCallInfo(this.getAgentCallId()).unhold();
   }
-
+// TODO: line below "and declines us" - not clear
   /**
    * Connects two agents after attended transfer and declines us
    * @public
    */
-  public confirmTransfer(): void {
+  public confirmTransfer(): void {// TODO: should state machine be involved?
     const callInfo: YayFonCall = this.getCallInfo(this.getAgentCallId());
     const attendedCallInfo = this.getCallInfo(this.getAttendedAgentCallId());
     if (callInfo) {
@@ -164,7 +158,7 @@ class YayFonNewSdk {
   }
 
   /**
-   * Fired for a successful registration
+   * Fired for successful registration
    * @param callback
    * @public
    */
@@ -175,7 +169,7 @@ class YayFonNewSdk {
   }
 
   /**
-   * Fired for a registration failure
+   * Fired for registration failure
    * @param callback
    * @public
    */
@@ -186,7 +180,7 @@ class YayFonNewSdk {
   }
 
   /**
-   * Fired for an unregistration
+   * Fired for unregistration
    * @param callback
    * @public
    */
@@ -197,7 +191,7 @@ class YayFonNewSdk {
   }
 
   /**
-   * Disconnects from the WebSocket server after gracefully unregistering and terminating any active sessions
+   * Disconnects from the WebSocket server after gracefully unregistering and terminates any active sessions
    * @public
    */
   public logout(): void {
@@ -239,7 +233,7 @@ class YayFonNewSdk {
    * @param {User} userData
    * @private
    */
-  private start(userData: any) {
+  private start(userData: any) { // TODO: method name can be more clealer, like startConnection or initiateConnection
     this.setOptions(userData)
       .then((config: any) => {
         this.userAgent = new SIP.UA(config);
@@ -282,7 +276,7 @@ class YayFonNewSdk {
   private setOptions(userData: any) {
     return new Promise((resolve: any) => {
       this.userData = userData;
-      let config: any;
+      let config: any; // TODO: create interface or class
       config = {
         log: {
           builtinEnabled: false,
@@ -295,6 +289,7 @@ class YayFonNewSdk {
         turnServers: [],
         uri: `${this.userData.username}@${this.serverConfig.serverHost}`,
       };
+
       if (userData.authKey) {
         config.password = userData.authKey;
         config.authorizationUser = userData.username;
@@ -302,6 +297,7 @@ class YayFonNewSdk {
       } else {
         config.register = false;
       }
+
       userData.connectivityElementSet.forEach((connectivityElement: any) => {
         if (connectivityElement.type === "Turn") {
           config.turnServers.push({
@@ -315,6 +311,7 @@ class YayFonNewSdk {
           });
         }
       });
+
       resolve(config);
     });
   }
@@ -326,17 +323,17 @@ class YayFonNewSdk {
   private onIncomingCall() {
     this.userAgent.on("invite", (session: any) => {
       const call = new YayFonCall(session, "incoming", this.stateMachine);
+
       if (this.agentCallId) {
         session.terminate({
           reason_phrase: "Busy Here",
           status_code: 486,
         });
-        return;
       } else {
         this.agentCallId = call.getSessionId();
         this.calls[this.agentCallId] = call;
+        this.incomingCall(call);
       }
-      this.incomingCall(call);
     });
   }
 }
