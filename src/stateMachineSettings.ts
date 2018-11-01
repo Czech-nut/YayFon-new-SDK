@@ -3,15 +3,12 @@ export class StateMachineSettings {
     init: "waiting",
     transitions: [
       {name: "answer", from: "calling", to: "talking"},
-      {name: "decline", from: "talking", to: "waiting"},
-      {name: "hold", from: "talking", to: "onHold"},
-      {name: "unhold", from: "onHold", to: "talking"},
-      {name: "mute", from: "talking", to: "onMute"},
-      {name: "unmute", from: "onMute", to: "talking"},
+      {name: "decline", from: ["talking", "calling"], to: "waiting"},
       {name: "blindTransfer", from: "talking", to: "waiting"},
-      {name: "attendedTransfer", from: "talking", to: "attendedCall"},
-      {name: "confirmTransfer", from: "attendedCall", to: "waiting"},
-      {name: "declineTransfer", from: "attendedCall", to: "waiting"},
+      {name: "call", from: "waiting", to: "calling"},
+      {name: "onFail", from: ["talking", "calling"], to: "waiting"},
+      {name: "onEnd", from: ["talking", "calling"], to: "waiting"},
+      {name: "onAccept", from: "calling", to: "talking"},
     ],
     methods: {
       onEnd() {

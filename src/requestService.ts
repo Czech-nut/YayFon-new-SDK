@@ -6,10 +6,20 @@ export class RequestService {
   private userData: User;
   private api: UrlConstants = new UrlConstants();
 
+  /**
+   *
+   * @param {User} userData
+   */
   constructor(userData: User) {
     this.userData = userData;
   }
 
+  /**
+   * Returns token
+   * @param {User} userData
+   * @public
+   * @returns Promise - resolve when we get token from server
+   */
   public getToken(userData: User) {
     return new Promise((resolve: any) => {
       const httpForToken = new XMLHttpRequest();
@@ -30,6 +40,12 @@ export class RequestService {
     });
   }
 
+  /**
+   * Returns user data for connecting to sipjs and set ups online status
+   * @param {string} token
+   * @public
+   * @returns Promise - resolve when we get user data from server
+   */
   public setOnlineStatus(token: string) {
     return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();
@@ -49,6 +65,11 @@ export class RequestService {
     });
   }
 
+  /**
+   * Sets offline status
+   * @public
+   * @returns Promise
+   */
   public setOfflineStatus() {
     return new Promise((resolve: any) => {
       const httpForLogout = new XMLHttpRequest();
@@ -69,6 +90,12 @@ export class RequestService {
     });
   }
 
+  /**
+   * Gets info about widget
+   * @param {User} userData
+   * @public
+   * @returns Promise - resolve when we get user data from server
+   */
   public getWidgetInfo(userData: User) {
     return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();

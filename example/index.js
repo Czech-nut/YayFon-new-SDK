@@ -12,7 +12,6 @@ window.login = function () {
   };
 
   connection = new YayFonNewSdk(uaConfig);
-  console.log(connection);
   document.getElementById('number').style.display = 'inline';
   document.getElementById('call').style.display = 'inline';
   document.getElementById('decline').style.display = 'inline';
@@ -63,7 +62,7 @@ window.call = function (number) {
 };
 
 window.decline = function () {
-  connection.getCallInfo(connection.getAgentCallId()).endCall();
+  connection.endCall();
 };
 
 window.answer = function () {

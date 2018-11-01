@@ -5,9 +5,6 @@ import {UrlConstants} from "./models/urlConstants";
 import {User} from "./models/User";
 import {RequestService} from "./requestService";
 import {StateMachine} from "./stateMachine";
-import {Calling} from "./states/calling";
-import {Talking} from "./states/talking";
-import {Waiting} from "./states/waiting";
 import {YayFonCall} from "./YayFonCall";
 
 // TODO: put the TSDOC documentation
@@ -32,6 +29,11 @@ class YayFonNewSdk {
   private api: UrlConstants = new UrlConstants();
   private requests: RequestService;
 
+  /**
+   *
+   * @param uaConfig - object with user data and callback
+   */
+
   constructor(uaConfig: any) {
     this.stateMachine = new StateMachine();
     this.userData = uaConfig.userData;
@@ -40,30 +42,41 @@ class YayFonNewSdk {
     this.incomingCall = uaConfig.callback;
   }
 
-  public getCallMethods() {
-    const state: string = this.stateMachine.getState();
-    if (state === "talking" || state === "onHold" || state === "onMute" || state === "attendedCall") {
-      return new Talking(); // TODO param call or calls
-    } else if (state === "waiting") {
-      return new Waiting();
-    } else if (state === "calling") {
-      return new Calling(); // TODO param call or calls
-    }
-  }
-
+  /**
+   * Returns info about current call
+   * @param {string} callId
+   * @public
+   * @returns {YayFonCall}
+   */
   public getCallInfo(callId: string): YayFonCall {
     return this.calls[callId];
   }
 
+  /**
+   * Returns current call id
+   * @public
+   * @returns {string} id of current call
+   */
   public getAgentCallId(): string {
     return this.agentCallId;
   }
 
+  /**
+   * Returns id of call with second agent after attended transfer
+   * @public
+   * @returns {string} id of call with second agent
+   */
   public getAttendedAgentCallId(): string {
     return this.attendedAgentCallId;
   }
 
+  /**
+   * Makes an outgoing multimedia call
+   * @public
+   * @param {string} phoneNumber - destination of the call
+   */
   public call(phoneNumber: string): void {
+    this.stateMachine.call();
     const options = {
       sessionDescriptionHandlerOptions: {
         constraints: {
@@ -73,7 +86,7 @@ class YayFonNewSdk {
       },
     };
     const session = this.userAgent.invite(`sip:${phoneNumber}@${this.serverConfig.serverHost}`, options);
-    const call = new YayFonCall(session, "outgoing");
+    const call = new YayFonCall(session, "outgoing", this.stateMachine);
     if (!this.getCallInfo(this.getAgentCallId())) {
       this.addSessionId(call);
     }
@@ -92,30 +105,55 @@ class YayFonNewSdk {
     this.incomingCall(call);
   }
 
+  /**
+   * Declines all calls and cleans object with all information about calls
+   * @public
+   */
   public endCall(): void {
-    for (const sessionId in this.calls) {
-      const call = this.calls[sessionId];
-      if (call) {
-        call.endCall();
+    const isMyObjectEmpty: boolean = !Object.keys(this.calls).length;
+    if (isMyObjectEmpty) {
+      this.stateMachine.decline();
+    } else {
+      for (const sessionId in this.calls) {
+        const call = this.calls[sessionId];
+        if (call) {
+          call.endCall();
+        }
       }
+      this.calls = {};
     }
-    this.calls = {};
   }
 
+  /**
+   * Transfer where before actually transferring to the destination,
+   * the call is put on hold and another call is initiated to confirm whether the end destination actually wants to take
+   * the call or not. These two calls can then merged together.
+   * @param {YayFonCall} agent - object with info about current call
+   * @param {string} phoneNumber - destination of the call
+   * @public
+   */
   public attendedTransfer(agent: YayFonCall, phoneNumber: string): void {
     agent.hold();
     const attendedSession = this.call(phoneNumber);
-    const attendedCall = new YayFonCall(attendedSession, "outgoing");
+    const attendedCall = new YayFonCall(attendedSession, "outgoing", this.stateMachine);
     const attendedSessionId = attendedCall.getSessionId();
     this.calls[attendedSessionId] = attendedCall;
     this.attendedAgentCallId = attendedSessionId;
   }
 
+  /**
+   * Declines only the person to whom the transfer was made
+   * @public
+   */
   public endAttendedCall(): void {
     this.getCallInfo(this.getAttendedAgentCallId()).endCall();
     this.getCallInfo(this.getAgentCallId()).unhold();
   }
 
+  /**
+   * Connects two agents after attended transfer and declines us
+   * @public
+   */
   public confirmTransfer(): void {
     const callInfo: YayFonCall = this.getCallInfo(this.getAgentCallId());
     const attendedCallInfo = this.getCallInfo(this.getAttendedAgentCallId());
@@ -125,24 +163,43 @@ class YayFonNewSdk {
     }
   }
 
+  /**
+   * Fired for a successful registration
+   * @param callback
+   * @public
+   */
   public onRegister(callback: any) {
     this.userAgent.on("registered", () => {
       callback();
     });
   }
 
+  /**
+   * Fired for a registration failure
+   * @param callback
+   * @public
+   */
   public onRegistrationFailed(callback: any) {
     this.userAgent.on("registrationFailed", () => {
       callback();
     });
   }
 
+  /**
+   * Fired for an unregistration
+   * @param callback
+   * @public
+   */
   public onUnregistered(callback: any) {
     this.userAgent.on("unregistered", () => {
       callback();
     });
   }
 
+  /**
+   * Disconnects from the WebSocket server after gracefully unregistering and terminating any active sessions
+   * @public
+   */
   public logout(): void {
     this.requests.setOfflineStatus()
       .then(() => {
@@ -150,6 +207,11 @@ class YayFonNewSdk {
       });
   }
 
+  /**
+   * Sets current user agent
+   * @param {User} userData
+   * @private
+   */
   private setUserAgent(userData: User): void {
     if (userData.token) {
       this.requests.setOnlineStatus(userData.token)
@@ -172,6 +234,11 @@ class YayFonNewSdk {
     }
   }
 
+  /**
+   * Connects to the configured WebSocket server
+   * @param {User} userData
+   * @private
+   */
   private start(userData: any) {
     this.setOptions(userData)
       .then((config: any) => {
@@ -181,6 +248,11 @@ class YayFonNewSdk {
       });
   }
 
+  /**
+   * Clears session
+   * @param {YayFonCall} call
+   * @private
+   */
   private clearSession(call: YayFonCall) {
     const sessionId = call.getSessionId();
     this.calls[sessionId] = null;
@@ -191,11 +263,22 @@ class YayFonNewSdk {
     }
   }
 
+  /**
+   * Adds session id to objects with all current calls
+   * @param {YayFonCall} call
+   * @private
+   */
   private addSessionId(call: YayFonCall) {
     this.agentCallId = call.getSessionId();
     this.calls[this.agentCallId] = call;
   }
 
+  /**
+   * Sets options for user agent
+   * @param userData
+   * @private
+   * @returns Promise - resolve when all params for configuration will set up
+   */
   private setOptions(userData: any) {
     return new Promise((resolve: any) => {
       this.userData = userData;
@@ -236,9 +319,13 @@ class YayFonNewSdk {
     });
   }
 
+  /**
+   * Fired when an incoming request is received.
+   * @private
+   */
   private onIncomingCall() {
     this.userAgent.on("invite", (session: any) => {
-      const call = new YayFonCall(session, "incoming");
+      const call = new YayFonCall(session, "incoming", this.stateMachine);
       if (this.agentCallId) {
         session.terminate({
           reason_phrase: "Busy Here",
@@ -252,15 +339,6 @@ class YayFonNewSdk {
       this.incomingCall(call);
     });
   }
-
-  private getState() {
-    this.stateMachine = this.stateMachine;
-  }             // TODO: here State Machine comes to play exposing the state to the SDK user.
-                // User can get the state but never change directly.
-
-  // each of the SDK methods should work state via State Machine
-  // think of pros and cons if the SIP methods should be called from the sdk itself(current file)
-  // or from the State machine file.
 }
 
 module.exports = YayFonNewSdk;
