@@ -1,9 +1,11 @@
+import {UrlConstants} from "./models/urlConstants";
 import {StateMachine} from "./stateMachine/stateMachine";
 
 export class YayFonCall {
   private readonly currentSession: any;
   private readonly callDirection: string;
   private stateMachine: StateMachine;
+  private readonly urls: UrlConstants = new UrlConstants();
 
   /**
    *
@@ -67,7 +69,8 @@ export class YayFonCall {
    */
   public blindTransfer(phoneNumber: string): void {
     this.stateMachine.blindTransfer();
-    this.currentSession.refer(`sip:${phoneNumber}@wss.yayfon.com`); // TODO: put into constants
+    const target: string = `sip:${phoneNumber}${this.urls.serverHost}`;
+    this.currentSession.refer(target);
   }
 
   /**
@@ -91,8 +94,25 @@ export class YayFonCall {
    * Mutes the local audio and/or video
    * @public
    */
-  public mute(): void {
-    this.currentSession.mute();
+  public mute(mute: boolean): void {
+    const pc = this.currentSession.sessionDescriptionHandler.peerConnection;
+    if (pc.getSenders) {
+      const senders = pc.getSenders();
+      senders.forEach((sender: any) => {
+        if (sender.track) {
+          sender.track.enabled = !mute;
+        }
+      });
+    } else {
+      pc.getLocalStreams().forEach((stream: any) => {
+        stream.getAudioTracks().forEach((track: any) => {
+          track.enabled = !mute;
+        });
+        stream.getVideoTracks().forEach((track: any) => {
+          track.enabled = !mute;
+        });
+      });
+    }
   }
 
   /**
@@ -100,7 +120,7 @@ export class YayFonCall {
    * @public
    */
   public unmute(): void {
-    this.currentSession.unmute();
+    this.mute(false);
   }
 
   /**
@@ -142,10 +162,13 @@ export class YayFonCall {
    * @param {(event: object) => void} callback
    * @public
    */
-  public onEnd(callback: (event: object) => void) { // TODO: here and everywhere: can we get the type for the event?
+  public onEnd(callback: (event: object) => void) {
     this.currentSession.on("terminated", (event: object) => {
-      if (this.stateMachine.getState() !== "waiting") {
+      const state: string = this.stateMachine.getState();
+      if (state === "calling" || state === "talking") {
         this.stateMachine.onEnd();
+      } else if (state === "talkingAttendedTransfer" || state === "callingAttendedTransfer") {
+        this.stateMachine.onEndAttendedTransfer();
       }
       callback(event);
     });
@@ -158,7 +181,12 @@ export class YayFonCall {
    */
   public onFail(callback: (e: object, cause: string) => void) {
     this.currentSession.on("failed", (e: object, cause: string) => {
-      this.stateMachine.onFail();
+      const state: string = this.stateMachine.getState();
+      if (state === "calling" || state === "talking") {
+        this.stateMachine.onFail();
+      } else if (state === "talkingAttendedTransfer" || state === "callingAttendedTransfer") {
+        this.stateMachine.onFailAttendedTransfer();
+      }
       callback(e, cause);
     });
   }

@@ -1,25 +1,29 @@
 import * as SIP from "sip.js";
 import {Promise} from "../node_modules/es6-promise/dist/es6-promise.js";
-import {ServerConfig} from "./models/ServerConfig";
+import {ConfigurationOptions} from "./models/configurationOptions";
 import {UrlConstants} from "./models/urlConstants";
 import {User} from "./models/User";
 import {RequestService} from "./requestService";
 import {StateMachine} from "./stateMachine/stateMachine";
 import {YayFonCall} from "./YayFonCall";
 
-// TODO: create the interfaces to get the missed and "any" types
-// TODO: all the public methods should go into README.md with descriptions
+interface ICalls {
+  [key: string]: YayFonCall | null;
+}
 
-class YayFonNewSdk {
+class YayFonSdk {
   private readonly stateMachine: StateMachine;
   private readonly incomingCall: (call: YayFonCall) => void;
-  private userAgent: any;
+  private userAgent: SIP.UA = new SIP.UA({
+    log: {
+      builtinEnabled: false,
+    },
+  });
   private userData: User;
-  private serverConfig: ServerConfig = new ServerConfig("wss.yayfon.com", "443");
+  private readonly urls: UrlConstants = new UrlConstants();
   private agentCallId: string = "";
   private attendedAgentCallId: string = "";
-  private calls: any = {};
-  private api: UrlConstants = new UrlConstants();
+  private calls: ICalls = {};
   private requests: RequestService;
 
   /**
@@ -40,7 +44,7 @@ class YayFonNewSdk {
    * @public
    * @returns {YayFonCall}
    */
-  public getCallInfo(callId: string): YayFonCall {
+  public getCallInfo(callId: string): YayFonCall | null {
     return this.calls[callId];
   }
 
@@ -69,8 +73,7 @@ class YayFonNewSdk {
    */
   public call(phoneNumber: string): void {
     this.stateMachine.call();
-
-    const options = { // TODO: can be created as class
+    const options: any = {
       sessionDescriptionHandlerOptions: {
         constraints: {
           audio: true,
@@ -78,7 +81,8 @@ class YayFonNewSdk {
         },
       },
     };
-    const session = this.userAgent.invite(`sip:${phoneNumber}@${this.serverConfig.serverHost}`, options);
+    const target: string = `sip:${phoneNumber}@${this.urls.serverHost}`;
+    const session = this.userAgent.invite(target, options);
     const call = new YayFonCall(session, "outgoing", this.stateMachine);
 
     if (!this.getCallInfo(this.getAgentCallId())) {
@@ -104,30 +108,25 @@ class YayFonNewSdk {
    * @public
    */
   public endCall(): void {
-    const isMyObjectEmpty: boolean = !Object.keys(this.calls).length;
-    if (isMyObjectEmpty) {
-      this.stateMachine.decline();
-    } else {
-      for (const sessionId in this.calls) {
-        const call = this.calls[sessionId];
-        if (call) {
-          call.endCall(); // TODO: should state machine be involved in that case as well?
-        }
+    this.stateMachine.decline();
+    for (const sessionId in this.calls) {
+      if (this.calls[sessionId]) {
+        this.calls[sessionId]!.endCall();
       }
-      this.calls = {};
     }
+    this.calls = {};
   }
-// TODO: the line below "Transfer where before actually transferring to the destination" doesn't make much sense
+
   /**
-   * Transfer where before actually transferring to the destination,
-   * the call is put on hold and another call is initiated to confirm whether the end destination
-   * actually wants to take the call or not. These two calls can be merged together later.
+   * The current call is put on hold and another call is initiated to confirm whether the end destination
+   * actually wants to take the call or not.
    * @param {YayFonCall} agent - object with info about current call
    * @param {string} phoneNumber - destination of the call
    * @public
    */
   public attendedTransfer(agent: YayFonCall, phoneNumber: string): void {
-    agent.hold(); // TODO: should state machine be involved?
+    this.stateMachine.attendedTransfer();
+    agent.hold();
     const attendedSession = this.call(phoneNumber);
     const attendedCall = new YayFonCall(attendedSession, "outgoing", this.stateMachine);
     const attendedSessionId = attendedCall.getSessionId();
@@ -139,21 +138,23 @@ class YayFonNewSdk {
    * Declines only the person to whom the transfer was made
    * @public
    */
-  public endAttendedCall(): void {// TODO: should state machine be involved?
-    this.getCallInfo(this.getAttendedAgentCallId()).endCall();
-    this.getCallInfo(this.getAgentCallId()).unhold();
+  public endAttendedCall(): void {
+    this.stateMachine.declineAttendedTransfer();
+    this.getCallInfo(this.getAttendedAgentCallId())!.endCall();
+    this.getCallInfo(this.getAgentCallId())!.unhold();
   }
-// TODO: line below "and declines us" - not clear
+
   /**
-   * Connects two agents after attended transfer and declines us
+   * Connects two agents after attended transfer and terminates current call
    * @public
    */
-  public confirmTransfer(): void {// TODO: should state machine be involved?
-    const callInfo: YayFonCall = this.getCallInfo(this.getAgentCallId());
+  public confirmTransfer(): void {
+    this.stateMachine.confirmTransfer();
+    const callInfo: YayFonCall | null = this.getCallInfo(this.getAgentCallId());
     const attendedCallInfo = this.getCallInfo(this.getAttendedAgentCallId());
     if (callInfo) {
       callInfo.unhold();
-      callInfo.getSession().refer(attendedCallInfo.getSession());
+      callInfo.getSession().refer(attendedCallInfo!.getSession());
     }
   }
 
@@ -210,20 +211,20 @@ class YayFonNewSdk {
     if (userData.token) {
       this.requests.setOnlineStatus(userData.token)
         .then((response: User) => {
-          this.start(response);
+          this.startConnection(response);
         });
     } else if (userData.password) {
       this.requests.getToken(userData)
         .then((token: string) => {
           this.requests.setOnlineStatus(token.toString())
             .then((response: User) => {
-              this.start(response);
+              this.startConnection(response);
             });
         });
     } else if (!userData.password) {
       this.requests.getWidgetInfo(userData)
         .then((response: User) => {
-          this.start(response);
+          this.startConnection(response);
         });
     }
   }
@@ -233,7 +234,7 @@ class YayFonNewSdk {
    * @param {User} userData
    * @private
    */
-  private start(userData: any) { // TODO: method name can be more clealer, like startConnection or initiateConnection
+  private startConnection(userData: any) {
     this.setOptions(userData)
       .then((config: any) => {
         this.userAgent = new SIP.UA(config);
@@ -276,42 +277,7 @@ class YayFonNewSdk {
   private setOptions(userData: any) {
     return new Promise((resolve: any) => {
       this.userData = userData;
-      let config: any; // TODO: create interface or class
-      config = {
-        log: {
-          builtinEnabled: false,
-        },
-        stunServers: [],
-        traceSip: true,
-        transportOptions: {
-          wsServers: [this.api.server],
-        },
-        turnServers: [],
-        uri: `${this.userData.username}@${this.serverConfig.serverHost}`,
-      };
-
-      if (userData.authKey) {
-        config.password = userData.authKey;
-        config.authorizationUser = userData.username;
-        config.register = true;
-      } else {
-        config.register = false;
-      }
-
-      userData.connectivityElementSet.forEach((connectivityElement: any) => {
-        if (connectivityElement.type === "Turn") {
-          config.turnServers.push({
-            credential: connectivityElement.restCredentials.credential,
-            urls: `${connectivityElement.type.toLowerCase()}${connectivityElement.host}:${connectivityElement.port}?transport=${connectivityElement.transport.toLowerCase()}`,
-            username: connectivityElement.restCredentials.username,
-          });
-        } else {
-          config.stunServers.push({
-            urls: `${connectivityElement.type.toLowerCase()}${connectivityElement.host}:${connectivityElement.port}?transport=${connectivityElement.transport.toLowerCase()}`,
-          });
-        }
-      });
-
+      const config: ConfigurationOptions = new ConfigurationOptions(this.userData);
       resolve(config);
     });
   }
@@ -338,5 +304,5 @@ class YayFonNewSdk {
   }
 }
 
-module.exports = YayFonNewSdk;
-exports = YayFonNewSdk;
+module.exports = YayFonSdk;
+exports = YayFonSdk;

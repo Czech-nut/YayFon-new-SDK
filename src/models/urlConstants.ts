@@ -5,4 +5,6 @@ export class UrlConstants {
   public readonly offline: string = `${this.api}console/account/offline`;
   public readonly widgetSettings: string = `${this.api}widget/caller-settings/`;
   public readonly server: string = `wss://wss.yayfon.com`;
+  public readonly serverHost: string = `wss.yayfon.com`;
+  public readonly serverPort: string = `443`;
 }

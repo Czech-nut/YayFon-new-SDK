@@ -13,7 +13,7 @@ export class RequestService {
   constructor(userData: User) {
     this.userData = userData;
   }
-// TODO: general question: do we process the backend errors somewhere? SDK should return fail event instead of crushing
+
   /**
    * Returns token after Promise resolve
    * @param {User} userData
@@ -21,7 +21,7 @@ export class RequestService {
    * @returns Promise - resolve when we get token from server
    */
   public getToken(userData: User) {
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForToken = new XMLHttpRequest();
       const convertedUserData = JSON.stringify({
         password: userData.password,
@@ -35,6 +35,8 @@ export class RequestService {
           const token: string = JSON.parse(httpForToken.responseText).token;
           localStorage.setItem("yayFonToken", token);
           resolve(token);
+        } else {
+          reject();
         }
       };
 
@@ -49,7 +51,7 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public setOnlineStatus(token: string) {
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForAuth = new XMLHttpRequest();
 
       httpForAuth.open("POST", this.api.online, true);
@@ -63,6 +65,8 @@ export class RequestService {
         if (httpForAuth.readyState === XMLHttpRequest.DONE && httpForAuth.status === 200) {
           this.userData = JSON.parse(httpForAuth.responseText);
           resolve(this.userData);
+        } else {
+          reject();
         }
       };
     });
@@ -74,7 +78,7 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public setOfflineStatus() {
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForLogout = new XMLHttpRequest();
       const token = localStorage.getItem("yayFonToken");
 
@@ -89,6 +93,8 @@ export class RequestService {
         if (httpForLogout.readyState === XMLHttpRequest.DONE && httpForLogout.status === 200) {
           localStorage.setItem("yayFonToken", "");
           resolve();
+        } else {
+          reject();
         }
       };
     });
@@ -101,22 +107,19 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public getWidgetInfo(userData: User) {
-    return new Promise((resolve: any) => {
+    return new Promise((resolve: any, reject: any) => {
       const httpForAuth = new XMLHttpRequest();
 
       httpForAuth.open("GET", this.api.widgetSettings + userData.username, true);
       httpForAuth.send(null);
       httpForAuth.onreadystatechange = () => {
         if (httpForAuth.readyState === XMLHttpRequest.DONE && httpForAuth.status === 200) {
-          this.userData = { // TODO: looks like it can be created via class (from "models" folder)
-            authKey: "",
-            connectivityElementSet: JSON.parse(httpForAuth.responseText).connectivityElementSet,
-            displayName: "",
-            password: "",
-            token: "",
-            username: JSON.parse(httpForAuth.responseText).from,
-          };
+          const username = JSON.parse(httpForAuth.responseText).from;
+          const connectivityElements = JSON.parse(httpForAuth.responseText).connectivityElementSet;
+          this.userData = new User(username, "", "", "", "", connectivityElements);
           resolve(this.userData);
+        } else {
+          reject();
         }
       };
     });

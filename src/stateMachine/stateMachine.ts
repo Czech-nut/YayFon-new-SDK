@@ -1,6 +1,4 @@
 import {StateMachineSettings} from "./stateMachineSettings";
-// TODO: try to import as typescript module from TS version of library
-// import { StateMachine } from "@taoqf/javascript-state-machine";
 const StateMachineConstructor = require("javascript-state-machine");
 
 export class StateMachine {
@@ -65,6 +63,54 @@ export class StateMachine {
    */
   public onAccept() {
     this.stateMachine.onAccept();
+  }
+
+  /**
+   * Changes state in state machine(from 'talking' to 'callingAttendedTransfer')
+   * @public
+   */
+  public attendedTransfer() {
+    this.stateMachine.attendedTransfer();
+  }
+
+  /**
+   * Changes state in state machine(from 'callingAttendedTransfer' to 'talkingAttendedTransfer')
+   * @public
+   */
+  public acceptedAttendedTransfer() {
+    this.stateMachine.acceptedAttendedTransfer();
+  }
+
+  /**
+   * Changes state in state machine(from 'talkingAttendedTransfer' to 'waiting')
+   * @public
+   */
+  public confirmTransfer() {
+    this.stateMachine.confirmTransfer();
+  }
+
+  /**
+   * Changes state in state machine(from 'talkingAttendedTransfer' to 'talking')
+   * @public
+   */
+  public declineAttendedTransfer() {
+    this.stateMachine.declineAttendedTransfer();
+  }
+
+  /**
+   * Changes state in state machine(from "talkingAttendedTransfer" or "callingAttendedTransfer" to 'talking')
+   * @public
+   */
+  public onFailAttendedTransfer() {
+    this.stateMachine.onFailAttendedTransfer();
+  }
+
+  /**
+   * Changes state in state machine(from "talkingAttendedTransfer" or "callingAttendedTransfer" to 'talking')
+   * @public
+   */
+  public onEndAttendedTransfer() {
+    this.stateMachine.declineAttendedTransfer();
   }
 
   /**

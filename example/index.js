@@ -1,4 +1,4 @@
-var YayFonNewSdk = require('../src/index.js');
+var YayFonSdk = require('../src/index.js');
 let connection;
 window.login = function () {
   let uaConfig = {
@@ -11,7 +11,7 @@ window.login = function () {
     },
   };
 
-  connection = new YayFonNewSdk(uaConfig);
+  connection = new YayFonSdk(uaConfig);
   document.getElementById('number').style.display = 'inline';
   document.getElementById('call').style.display = 'inline';
   document.getElementById('decline').style.display = 'inline';
