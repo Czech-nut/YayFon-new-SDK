@@ -1,133 +1,120 @@
-<h1>YayFon-js-SDK</h1>
-YayFon-js-SDK is a JavaScript library that helps developers make applications for different calls.
+# YayFon-js-SDK
+Sip.js-based JavaScript library that helps developers make applications for online calls.
 
-YayFin-js-SDK features:
-- Audio/video calls
-- Blind and attended transfers
-- Easy to use
-- Works with SIP.JS
+YayFon-js-SDK features:
+- Audio and Video calls support
 - Uses State Machine
+- Blind and Attended transfers
 
-Here is the npm command to download our package:
+Get the SDK package:
 
     $ npm i @yayfon/yayfon-js-sdk
 
 
+# Usage
 
-<h1>Usage</h1>
+Example with login and bundled SDK can be found in "example" folder.
 
-You can find example in our project in "example" folder.
-
-To start you should write next npm commands:
+To start example run:
 
     $ npm i
     $ npm run build 
 
 
-<h1>API</h1>
+# API
 
-<h2>YayFonSdk</h2>
+### YayFonSdk
 Class for init connection, make calls, attended transfer and confirm transfer
 
-<h4>getCallInfo</h4>
+##### getCallInfo()
 Returns info about current call
 
-<h4>getAgentCallId()</h4>
+##### getAgentCallId()
 Returns current call id
 
-<h4>getAttendedAgentCallId()</h4>
+##### getAttendedAgentCallId()
 Returns id of call with second agent after attended transfer
 
-<h4>call(phoneNumber)</h4>
+##### call(phoneNumber)
 Makes an outgoing multimedia call
+*phoneNumber* - destination of the call
 
-phoneNumber - destination of the call
-
-<h4>endCall()</h4>
+##### endCall()
 Declines all calls and cleans object with all information about calls
 
-<h4>attendedTransfer(agent, phoneNumber)</h4>
+##### attendedTransfer(agent, phoneNumber)
 The current call is put on hold and another call is initiated to confirm whether the end destination
 actually wants to take the call or not
+*agent* - object with info about current call (YayFonCall)
+*phoneNumber* - destination of the call
 
-agent - object with info about current call (YayFonCall)
-phoneNumber - destination of the call
-
-<h4>endAttendedCall()</h4>
+##### endAttendedCall()
 Declines only the person to whom the transfer was made
 
-<h4>confirmTransfer()</h4>
+##### confirmTransfer()
 Connects two agents after attended transfer and terminates current call
 
-<h4>onRegister(callback)</h4>
+##### onRegister(callback)
 Fired for successful registration
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>onRegistrationFailed(callback)</h4>
+##### onRegistrationFailed(callback)
 Fired for registration failure
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>onUnregistered(callback)</h4>
+##### onUnregistered(callback)
 Fired for unregistration
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>logout()</h4>
+##### logout()
 Disconnects from the WebSocket server after gracefully unregistering and terminates any active sessions
 
-<h2>YayFonCall</h2>
+### YayFonCall
 Class to manage calls
 
-<h4>getSession()</h4>
+##### getSession()
 Returns info about current session
 
-<h4>getSessionId()</h4>
+##### getSessionId()
 Returns id of current session
 
-<h4>answer()</h4>
+##### answer()
 Answer the incoming session. Available only for incoming call
 
-<h4>endCall()</h4>
+##### endCall()
 Terminates current call
 
-<h4>blindTransfer(phoneNumber)</h4>
+##### blindTransfer(phoneNumber)
 Transfers the caller to another agent without speaking to the new agent first
+*phoneNumber* - destination of the call
 
-phoneNumber - destination of the call
-
-<h4>hold()</h4>
+##### hold()
 Puts the call on hold
 
-<h4>unhold()</h4>
+##### unhold()
 Resumes the call from hold
 
-<h4>mute(true)</h4>
+##### mute(true)
 Mutes the local audio and/or video
 
-<h4>unmute()</h4>
+##### unmute()
 Unmutes the local audio and/or video
 
-<h4>isIncomingCall()</h4>
+##### isIncomingCall()
 Determines if the call is incoming
 
-<h4>onAccept(callback)</h4>
+##### onAccept(callback)
 Fired each time a successful final (200-299) response is received
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>onProgress(callback)</h4>
+##### onProgress(callback)
 Fired each time a provisional response is received
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>onEnd(callback)</h4>
+##### onEnd(callback)
 Fired when an established call ends
+*callback* - function that runs, when event fired
 
-callback - function that runs, when event fired
-
-<h4>onFail(callback)</h4>
+##### onFail(callback)
 Fired when the request fails, whether due to an unsuccessful final response or due to timeout, transport, or other
-
-callback - function that runs, when event fired
+*callback* - function that runs, when event fired
