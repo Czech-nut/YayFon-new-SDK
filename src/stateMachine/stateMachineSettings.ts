@@ -6,7 +6,7 @@ export class StateMachineSettings {
       {name: "decline", from: ["talking", "calling", "talkingAttendedTransfer"], to: "waiting"},
       {name: "blindTransfer", from: "talking", to: "waiting"},
       {name: "attendedTransfer", from: "talking", to: "callingAttendedTransfer"},
-      {name: "acceptedAttendedTransfer", from: "callingAttendedTransfer", to: "talkingAttendedTransfer"},
+      {name: "acceptAttendedTransfer", from: "callingAttendedTransfer", to: "talkingAttendedTransfer"},
       {name: "confirmTransfer", from: "talkingAttendedTransfer", to: "waiting"},
       {name: "declineAttendedTransfer", from: "talkingAttendedTransfer", to: "talking"},
       {name: "call", from: "waiting", to: "calling"},

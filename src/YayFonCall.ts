@@ -4,8 +4,8 @@ import {StateMachine} from "./stateMachine/stateMachine";
 export class YayFonCall {
   private readonly currentSession: any;
   private readonly callDirection: string;
-  private stateMachine: StateMachine;
   private readonly urls: UrlConstants = new UrlConstants();
+  private stateMachine: StateMachine;
 
   /**
    *
@@ -96,6 +96,7 @@ export class YayFonCall {
    */
   public mute(mute: boolean): void {
     const pc = this.currentSession.sessionDescriptionHandler.peerConnection;
+
     if (pc.getSenders) {
       const senders = pc.getSenders();
       senders.forEach((sender: any) => {
