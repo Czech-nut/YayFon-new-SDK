@@ -77,8 +77,8 @@ export class StateMachine {
    * Changes state in state machine(from 'callingAttendedTransfer' to 'talkingAttendedTransfer')
    * @public
    */
-  public acceptedAttendedTransfer() {
-    this.stateMachine.acceptedAttendedTransfer();
+  public acceptAttendedTransfer() {
+    this.stateMachine.acceptAttendedTransfer();
   }
 
   /**

@@ -1,5 +1,5 @@
 {
-  "name": "@yayfon/yayfon-new-js-sdk",
+  "name": "@yayfon/yayfon-js-sdk",
   "version": "1.0.0",
   "description": "SIP.js based SDK for YayFon takes care of WebRTC and SIP signaling",
   "main": "index.js",

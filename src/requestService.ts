@@ -108,7 +108,7 @@ export class RequestService {
         if (httpForAuth.readyState === XMLHttpRequest.DONE && httpForAuth.status === 200) {
           const username = JSON.parse(httpForAuth.responseText).from;
           const connectivityElements = JSON.parse(httpForAuth.responseText).connectivityElementSet;
-          this.userData = new User(username, "", "", "", "", connectivityElements);
+          this.userData = new User(connectivityElements, username);
           resolve(this.userData);
         }
       };
