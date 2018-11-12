@@ -5,9 +5,11 @@ export class ConfigurationOptions {
   private readonly urls: UrlConstants = new UrlConstants();
   constructor(userData: any) {
     this.config = {
+      authorizationUser: userData.username,
       log: {
         builtinEnabled: false,
       },
+      registerExpires: 100000,
       stunServers: [],
       traceSip: true,
       transportOptions: {

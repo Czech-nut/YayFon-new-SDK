@@ -20,7 +20,6 @@ window.login = function () {
   document.getElementById('password').style.display = 'none';
   document.getElementById('username').style.display = 'none';
 };
-
 window.reactionOnCall = function (call) {
   const isIncoming = call.isIncomingCall();
   document.getElementById('call').style.display = 'none';
@@ -48,7 +47,10 @@ window.reactionOnCall = function (call) {
       console.log('onFail', e);
       setViewForEnd();
     });
-    call.onAccept((pc) => {
+    call.onTrackAdded(()=> {
+      console.log('onTrackAdded');
+    }, document.getElementById('remoteAudio'));
+    call.onAccept(() => {
       console.log('onAnswer');
       document.getElementById('blindTransfer').style.display = 'inline';
       document.getElementById('attendedTransfer').style.display = 'inline';
@@ -88,6 +90,7 @@ window.hold = function () {
   connection.getCallInfo(connection.getAgentCallId()).hold();
   document.getElementById('hold').style.display = 'none';
   document.getElementById('unhold').style.display = 'inline';
+  document.getElementById('remoteAudio').pause();
 };
 
 window.unhold = function () {

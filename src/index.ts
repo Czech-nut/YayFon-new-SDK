@@ -14,11 +14,7 @@ interface ICalls {
 class YayFonSdk {
   private readonly stateMachine: StateMachine;
   private readonly incomingCall: (call: YayFonCall) => void;
-  private userAgent: SIP.UA = new SIP.UA({
-    log: {
-      builtinEnabled: false,
-    },
-  });
+  private userAgent: any;
   private userData: User;
   private readonly urls: UrlConstants = new UrlConstants();
   private agentCallId: string = "";
@@ -72,7 +68,10 @@ class YayFonSdk {
    * @param {string} phoneNumber - destination of the call
    */
   public call(phoneNumber: string): void {
-    this.stateMachine.call();
+    if (this.stateMachine.getState() !== "talking") {
+      this.stateMachine.call();
+    }
+
     const options: any = {
       sessionDescriptionHandlerOptions: {
         constraints: {
@@ -237,7 +236,7 @@ class YayFonSdk {
   private startConnection(userData: any) {
     this.setOptions(userData)
       .then((config: any) => {
-        this.userAgent = new SIP.UA(config);
+        this.userAgent = new SIP.UA(config.config);
         this.userAgent.start();
         this.onIncomingCall();
       });

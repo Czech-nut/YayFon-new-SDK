@@ -21,7 +21,7 @@ export class RequestService {
    * @returns Promise - resolve when we get token from server
    */
   public getToken(userData: User) {
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve: any) => {
       const httpForToken = new XMLHttpRequest();
       const convertedUserData = JSON.stringify({
         password: userData.password,
@@ -35,11 +35,8 @@ export class RequestService {
           const token: string = JSON.parse(httpForToken.responseText).token;
           localStorage.setItem("yayFonToken", token);
           resolve(token);
-        } else {
-          reject();
         }
       };
-
       httpForToken.send(convertedUserData);
     });
   }
@@ -51,9 +48,8 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public setOnlineStatus(token: string) {
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();
-
       httpForAuth.open("POST", this.api.online, true);
       httpForAuth.setRequestHeader("Content-Type", "application/json");
       httpForAuth.setRequestHeader("Authorization", "Bearer " + token);
@@ -65,8 +61,6 @@ export class RequestService {
         if (httpForAuth.readyState === XMLHttpRequest.DONE && httpForAuth.status === 200) {
           this.userData = JSON.parse(httpForAuth.responseText);
           resolve(this.userData);
-        } else {
-          reject();
         }
       };
     });
@@ -78,7 +72,7 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public setOfflineStatus() {
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve: any) => {
       const httpForLogout = new XMLHttpRequest();
       const token = localStorage.getItem("yayFonToken");
 
@@ -93,8 +87,6 @@ export class RequestService {
         if (httpForLogout.readyState === XMLHttpRequest.DONE && httpForLogout.status === 200) {
           localStorage.setItem("yayFonToken", "");
           resolve();
-        } else {
-          reject();
         }
       };
     });
@@ -107,7 +99,7 @@ export class RequestService {
    * @returns Promise - resolve when we get user data from server
    */
   public getWidgetInfo(userData: User) {
-    return new Promise((resolve: any, reject: any) => {
+    return new Promise((resolve: any) => {
       const httpForAuth = new XMLHttpRequest();
 
       httpForAuth.open("GET", this.api.widgetSettings + userData.username, true);
@@ -118,8 +110,6 @@ export class RequestService {
           const connectivityElements = JSON.parse(httpForAuth.responseText).connectivityElementSet;
           this.userData = new User(username, "", "", "", "", connectivityElements);
           resolve(this.userData);
-        } else {
-          reject();
         }
       };
     });

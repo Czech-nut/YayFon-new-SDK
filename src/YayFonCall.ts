@@ -1,6 +1,8 @@
 import {UrlConstants} from "./models/urlConstants";
 import {StateMachine} from "./stateMachine/stateMachine";
 
+declare var MediaStream: any;
+
 export class YayFonCall {
   private readonly currentSession: any;
   private readonly callDirection: string;
@@ -87,7 +89,15 @@ export class YayFonCall {
    * @public
    */
   public unhold(): void {
-    this.currentSession.unhold();
+    const options = {
+      sessionDescriptionHandlerOptions: {
+        constraints: {
+          audio: true,
+          video: false,
+        },
+      },
+    };
+    this.currentSession.unhold(options);
   }
 
   /**
@@ -138,11 +148,28 @@ export class YayFonCall {
    * @param {(event: object) => void} callback
    * @public
    */
-  public onAccept(callback: (pc: object) => void) {
+  public onAccept(callback: () => void) {
     this.currentSession.on("accepted", () => {
       this.stateMachine.onAccept();
+      callback();
+    });
+  }
+
+  /**
+   * Fired each time when track added
+   * @param {(event: object) => void} callback
+   * @public
+   */
+  public onTrackAdded(callback: () => void, remoteAudio: any) {
+    this.currentSession.on("trackAdded", () => {
       const pc = this.currentSession.sessionDescriptionHandler.peerConnection;
-      callback(pc);
+      const remoteStream = new MediaStream();
+      pc.getReceivers().forEach((receiver: any) => {
+        remoteStream.addTrack(receiver.track);
+      });
+      remoteAudio.srcObject = remoteStream;
+      remoteAudio.play();
+      callback();
     });
   }
 
